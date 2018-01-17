@@ -9,7 +9,7 @@ typedef struct radio_header
 	u_char data_rate;
 	u_short channel_frequency;
 	u_short channel_flags;
-	u_char SSI_signal;
+	char SSI_signal;
 	u_char antenna;
 	u_short RX_flags;
 }radio_h;

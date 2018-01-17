@@ -58,6 +58,10 @@ int main(int argc, char *argv[])
 			break;
 		}
 		radio = (radio_h*)packet;
+
+		printf("Frequency\t\t:%d [ch.%d]\n", radio->channel_frequency, (radio->channel_frequency-2407)/5);
+		printf("SSI_Signal\t\t:%d dbm\n", radio->SSI_signal);
+//------------------------------------------------------------------
 		IEEE11 = (IEEE11_h*)(packet+radio->header_length);
 		u_char type_subtype;
 		type_subtype = IEEE11->FC_subtype & 0xF3;
@@ -91,6 +95,14 @@ int main(int argc, char *argv[])
 		print_MAC(IEEE11->ADDR2);
 		cout << "BSSID\t\t\t";
 		print_MAC(IEEE11->ADDR3);
+		
+		u_char *LAN = (u_char*)(IEEE11)+24+12;	// IEE Beacon 24, fixed 12
+		u_char length = *(LAN+1);
+		
+		cout << "ESSID\t\t\t:";
+		for (u_char i = 0; i < length; i++)
+			cout << *(LAN+2+i);
+		cout << endl;
 		cout << endl;
 	}
 	pcap_close(handle);
