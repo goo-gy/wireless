@@ -22,9 +22,9 @@ void print_MAC(u_char *MAC)
 void Tag(u_char *LAN)
 {
 	u_char tag_length;
+	tag_length = *(LAN+1);
 	if(*LAN == 0)
 	{
-		tag_length = *(LAN+1);
 		cout << "ESSID\t\t\t:";
 		for (u_char i = 0; i < tag_length; i++)
 			cout << *(LAN+2+i);
@@ -32,12 +32,13 @@ void Tag(u_char *LAN)
 	}
 	else if(*LAN == 48)
 	{
-		cout << "ENC\t\t\t:PWA2" << endl;
+		cout << "ENC\t\t\t:WPA2 (Not Certain)" << endl;
 	}
 	else if(*LAN == 221)
+	{
 		return;
-	else
-		return Tag(LAN+tag_length+2);
+	}
+	Tag(LAN+tag_length+2);
 }
 
 int main(int argc, char *argv[])
@@ -81,8 +82,8 @@ int main(int argc, char *argv[])
 		}
 		radio = (radio_h*)packet;
 
-		printf("Frequency\t\t:%d [ch.%d]\n", radio->channel_frequency, (radio->channel_frequency-2407)/5);
-		printf("SSI_Signal\t\t:%d dbm\n", radio->SSI_signal);
+		//printf("Frequency\t\t:%d [ch.%d]\n", radio->channel_frequency, (radio->channel_frequency-2407)/5);
+		//printf("SSI_Signal\t\t:%d dbm\n", radio->SSI_signal);
 //------------------------------------------------------------------
 		IEEE11 = (IEEE11_h*)(packet+radio->header_length);
 		u_char type;
@@ -93,6 +94,10 @@ int main(int argc, char *argv[])
 
 		//subtype = type*0x10 + subtype;
 		
+		if(!(type == 0 && subtype == 8))
+			continue;
+		printf("Frequency\t\t:%d [ch.%d]\n", radio->channel_frequency, (radio->channel_frequency-2407)/5);
+		printf("SSI_Signal\t\t:%d dbm\n", radio->SSI_signal);
 
 		printf("Type\t\t\t:%d\n", type);
 		printf("Type_Subtype\t\t:%d\t", subtype);
