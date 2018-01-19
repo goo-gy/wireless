@@ -7,6 +7,7 @@
 
 using namespace std;
 
+enum TYPE_SUBTYPE { PROVE_REQUEST, PROVE_RESPONSE, BEACON, AUTH, DEAUTH, ELSE };
 
 void print_MAC(u_char *MAC)
 {
@@ -16,6 +17,27 @@ void print_MAC(u_char *MAC)
 	}
 	cout << endl;
 	return;
+}
+
+void Tag(u_char *LAN)
+{
+	u_char tag_length;
+	if(*LAN == 0)
+	{
+		tag_length = *(LAN+1);
+		cout << "ESSID\t\t\t:";
+		for (u_char i = 0; i < tag_length; i++)
+			cout << *(LAN+2+i);
+		cout << endl;
+	}
+	else if(*LAN == 48)
+	{
+		cout << "ENC\t\t\t:PWA2" << endl;
+	}
+	else if(*LAN == 221)
+		return;
+	else
+		return Tag(LAN+tag_length+2);
 }
 
 int main(int argc, char *argv[])
@@ -63,32 +85,63 @@ int main(int argc, char *argv[])
 		printf("SSI_Signal\t\t:%d dbm\n", radio->SSI_signal);
 //------------------------------------------------------------------
 		IEEE11 = (IEEE11_h*)(packet+radio->header_length);
-		u_char type_subtype;
-		type_subtype = IEEE11->FC_subtype & 0xF3;
-		type_subtype = (type_subtype >> 4) + (type_subtype << 4);
+		u_char type;
+		u_char subtype;
 
-		printf("Type_Subtype: %02X\t", type_subtype);
-		switch(type_subtype)
+		type = (IEEE11->FC_subtype & 0x0c) >> 2;
+		subtype = (IEEE11->FC_subtype & 0xF0) >> 4;
+
+		//subtype = type*0x10 + subtype;
+		
+
+		printf("Type\t\t\t:%d\n", type);
+		printf("Type_Subtype\t\t:%d\t", subtype);
+		
+		if(type == 0)
 		{
-			case 4:
-				cout << "[Probe request]" << endl;
-				break;
-			case 5:
-				cout << "[Probe response]" << endl;
-				break;
-			case 8:
-				cout << "[Beacon Frame]" << endl;
-				break;
-			case 11:
-				cout << "[Authentication]" << endl;
-				break;
-			case 12:
-				cout << "[DeAuthentication]" << endl;
-				break;
-			default:
-				cout << "[I Don't Know]" << endl;
-				continue;
+			switch(subtype)
+			{
+				case 4:
+					cout << "[Probe request]" << endl;
+					subtype = PROVE_REQUEST;
+					break;
+				case 5:
+					cout << "[Probe response]" << endl;
+					subtype = PROVE_RESPONSE;
+					break;
+				case 8:
+					cout << "[Beacon Frame]" << endl;
+					subtype = BEACON;
+					break;
+				case 11:
+					cout << "[Authentication]" << endl;
+					subtype = AUTH;
+					break;
+				case 12:
+					cout << "[DeAuthentication]" << endl;
+					subtype = DEAUTH;
+					break;
+				default:
+					cout << "[I Don't Know]" << endl << endl;
+					continue;
+			}
 		}
+		else if(type == 1)
+		{
+			cout << "[Control Frame]" << endl << endl;
+			continue;
+		}
+		else if(type == 2)
+		{
+			cout << "[Data Frame]" << endl << endl;
+			continue;
+		}
+		else
+		{
+			cout << "[None Type]" << endl << endl;
+			continue;
+		}
+		
 		cout << "Receiver/Destination\t";
 		print_MAC(IEEE11->ADDR1);
 		cout << "Transmitter/Source\t";
@@ -96,13 +149,12 @@ int main(int argc, char *argv[])
 		cout << "BSSID\t\t\t";
 		print_MAC(IEEE11->ADDR3);
 		
-		u_char *LAN = (u_char*)(IEEE11)+24+12;	// IEE Beacon 24, fixed 12
-		u_char length = *(LAN+1);
-		
-		cout << "ESSID\t\t\t:";
-		for (u_char i = 0; i < length; i++)
-			cout << *(LAN+2+i);
-		cout << endl;
+
+		if(subtype == BEACON)
+		{
+			u_char *LAN = (u_char*)(IEEE11)+24+12;  // IEEE Beacon 24, fixed 12
+			Tag(LAN);
+		}
 		cout << endl;
 	}
 	pcap_close(handle);

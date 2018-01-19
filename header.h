@@ -27,4 +27,16 @@ typedef struct IEEE11_header
 	u_short QoS_Control;
 	u_int HT_Control;
 }IEEE11_h;
+
+typedef struct AP_header
+{
+	char *BSSID;		// string
+	char *ESSID;		//
+	u_char channel;
+	char SSI_signal;
+	u_char encrypt;		//
+	u_char cipher;
+	u_char auth;
+	u_int beacon_count;
+}AP_h;
 // 34 bytes
