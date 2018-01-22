@@ -1,9 +1,23 @@
+#include <iostream>
+#include <cstdio>
+#include <pcap.h>
+#include <arpa/inet.h>
+#include <string>
+#include <list>
+#include <map>
+#include <stdlib.h>
+
+using namespace std;
+
+enum TYPE_SUBTYPE { PROVE_REQUEST, PROVE_RESPONSE, BEACON, AUTH, DEAUTH, ELSE };
+
+
 typedef struct radio_header
 {
 	u_char revision;
 	u_char pad;
 	u_short header_length;
-	u_int present_flags;		//Too many;;
+	u_int present_flags;
 	u_char MAC_timestamp[8];
 	u_char flags;	
 	u_char data_rate;
@@ -28,15 +42,125 @@ typedef struct IEEE11_header
 	u_int HT_Control;
 }IEEE11_h;
 
-typedef struct AP_header
-{
-	char *BSSID;		// string
-	char *ESSID;		//
-	u_char channel;
-	char SSI_signal;
-	u_char encrypt;		//
-	u_char cipher;
-	u_char auth;
-	u_int beacon_count;
-}AP_h;
-// 34 bytes
+class AP_H {
+private:
+	list<u_char> BSSID;
+        string ESSID;
+        u_char channel;
+        char SSI_signal;
+        unsigned int beacon_count;
+        unsigned int data_count;
+	u_char type_subtype;
+public:
+        AP_H()
+        {
+
+		beacon_count = 0;
+		data_count = 0;
+        }
+
+	void Set_info(const u_char *packet)
+	{
+		radio_h *radio;
+		radio = (radio_h*)packet;
+
+		channel = (radio->channel_frequency-2407)/5;
+		SSI_signal = radio->SSI_signal;
+
+		IEEE11_h *IEEE11;
+		IEEE11 = (IEEE11_h*)(packet+radio->header_length);
+		
+		u_char type = (IEEE11->FC_subtype & 0x0c) >> 2;
+		u_char subtype = (IEEE11->FC_subtype & 0xF0) >> 4;
+
+		if( type == 0 )
+		{
+			switch(subtype)
+			{
+				case 8:
+					type_subtype = BEACON;
+					beacon_count ++;
+					break;
+				default:
+					type_subtype = ELSE;
+					return;
+			}
+
+		}
+		else if(type == 1)		// [Control Frame]
+		{
+			type_subtype = ELSE;
+			return;
+		}
+		else if(type == 2)		// [Data Frame]
+		{
+			data_count++;
+			type_subtype = ELSE;
+			return;
+		}
+		else
+		{
+			type_subtype = ELSE;
+			 return;
+		 }
+                if(type_subtype == BEACON)
+                {
+			BSSID.clear();
+			for(int i = 0; i < 6; i++)
+			{
+				BSSID.push_back((int)(*(IEEE11->ADDR3+i)));
+			}
+                        u_char *LAN = (u_char*)(IEEE11)+24+12;  // IEEE Beacon 24, fixed 12
+                        Tag(LAN);
+		}
+	}
+
+	void Tag(u_char *LAN)
+	{
+		u_char tag_length;
+		tag_length = *(LAN+1);
+		if(*LAN == 0)
+		{
+			for (u_char i = 0; i < tag_length; i++)
+			      ESSID.assign(1, *(LAN+2+i));
+		}
+		else if(*LAN == 48)
+		{
+			cout << "";
+			//cout << "ENC\t\t\t:WPA2 (Not Certain)" << endl;
+		}
+		else if(*LAN == 221)
+		{
+			return;
+		}
+		Tag(LAN+tag_length+2);
+	}
+	
+	u_char get_subtype()
+	{
+		return type_subtype;
+	}
+	
+	list<u_char> get_MAC()
+	{
+		return BSSID;
+	}
+	void set_beacon(unsigned int count)
+	{
+		beacon_count = count;
+	}
+	unsigned int get_beacon()
+	{
+		return beacon_count;
+	}
+	void print_info()
+	{
+		cout << "  ";
+		printf("%2d  ", channel);
+		printf("%3d  ", SSI_signal);
+		printf("%7d  ", beacon_count);
+		printf("%5d\n", data_count);
+		cout << endl;
+	}
+};
+

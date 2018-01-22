@@ -1,13 +1,4 @@
-#include <iostream>
-#include <cstdio>
-#include <pcap.h>
 #include "header.h"
-
-#include <arpa/inet.h>
-
-using namespace std;
-
-enum TYPE_SUBTYPE { PROVE_REQUEST, PROVE_RESPONSE, BEACON, AUTH, DEAUTH, ELSE };
 
 void print_MAC(u_char *MAC)
 {
@@ -17,28 +8,6 @@ void print_MAC(u_char *MAC)
 	}
 	cout << endl;
 	return;
-}
-
-void Tag(u_char *LAN)
-{
-	u_char tag_length;
-	tag_length = *(LAN+1);
-	if(*LAN == 0)
-	{
-		cout << "ESSID\t\t\t:";
-		for (u_char i = 0; i < tag_length; i++)
-			cout << *(LAN+2+i);
-		cout << endl;
-	}
-	else if(*LAN == 48)
-	{
-		cout << "ENC\t\t\t:WPA2 (Not Certain)" << endl;
-	}
-	else if(*LAN == 221)
-	{
-		return;
-	}
-	Tag(LAN+tag_length+2);
 }
 
 int main(int argc, char *argv[])
@@ -52,7 +21,7 @@ int main(int argc, char *argv[])
 	radio_h *radio;
 	IEEE11_h *IEEE11;
 	int mode;
-
+//------------------------------------------------------------------	device
 	if(argc == 1)
 	{
 		cout << "Wire [Device]" << endl;
@@ -67,6 +36,12 @@ int main(int argc, char *argv[])
 		cout << "Give only one device" << endl;
 		return 0;
 	}
+//------------------------------------------------------------------	packet capture
+	map<list<u_char>, AP_H> AP_group;
+	map<list<u_char>, AP_H>::iterator iter;
+	AP_H AP_info;
+
+	list<u_char> BSSID;
 
 	while(true)
 	{
@@ -80,87 +55,39 @@ int main(int argc, char *argv[])
 			cout << "[End of File]" << endl;
 			break;
 		}
-		radio = (radio_h*)packet;
 
-		//printf("Frequency\t\t:%d [ch.%d]\n", radio->channel_frequency, (radio->channel_frequency-2407)/5);
-		//printf("SSI_Signal\t\t:%d dbm\n", radio->SSI_signal);
-//------------------------------------------------------------------
-		IEEE11 = (IEEE11_h*)(packet+radio->header_length);
-		u_char type;
-		u_char subtype;
+		AP_info.Set_info(packet);
+		BSSID = AP_info.get_MAC();
 
-		type = (IEEE11->FC_subtype & 0x0c) >> 2;
-		subtype = (IEEE11->FC_subtype & 0xF0) >> 4;
-
-		//subtype = type*0x10 + subtype;
-		
-		if(!(type == 0 && subtype == 8))
-			continue;
-		printf("Frequency\t\t:%d [ch.%d]\n", radio->channel_frequency, (radio->channel_frequency-2407)/5);
-		printf("SSI_Signal\t\t:%d dbm\n", radio->SSI_signal);
-
-		printf("Type\t\t\t:%d\n", type);
-		printf("Type_Subtype\t\t:%d\t", subtype);
-		
-		if(type == 0)
+		if(BEACON == AP_info.get_subtype())		//
 		{
-			switch(subtype)
+			if(AP_group.end() == AP_group.find(BSSID))	//BSSID
+				AP_group.insert(pair<list<u_char>, AP_H>(BSSID, AP_info));
+			else
 			{
-				case 4:
-					cout << "[Probe request]" << endl;
-					subtype = PROVE_REQUEST;
-					break;
-				case 5:
-					cout << "[Probe response]" << endl;
-					subtype = PROVE_RESPONSE;
-					break;
-				case 8:
-					cout << "[Beacon Frame]" << endl;
-					subtype = BEACON;
-					break;
-				case 11:
-					cout << "[Authentication]" << endl;
-					subtype = AUTH;
-					break;
-				case 12:
-					cout << "[DeAuthentication]" << endl;
-					subtype = DEAUTH;
-					break;
-				default:
-					cout << "[I Don't Know]" << endl << endl;
-					continue;
+				AP_info.set_beacon(AP_group[BSSID].get_beacon()+1);
+				AP_group[BSSID] = AP_info;
 			}
-		}
-		else if(type == 1)
-		{
-			cout << "[Control Frame]" << endl << endl;
-			continue;
-		}
-		else if(type == 2)
-		{
-			cout << "[Data Frame]" << endl << endl;
-			continue;
-		}
-		else
-		{
-			cout << "[None Type]" << endl << endl;
-			continue;
-		}
-		
-		cout << "Receiver/Destination\t";
-		print_MAC(IEEE11->ADDR1);
-		cout << "Transmitter/Source\t";
-		print_MAC(IEEE11->ADDR2);
-		cout << "BSSID\t\t\t";
-		print_MAC(IEEE11->ADDR3);
-		
+			//AP_group[BSSID] = AP_info;
 
-		if(subtype == BEACON)
-		{
-			u_char *LAN = (u_char*)(IEEE11)+24+12;  // IEEE Beacon 24, fixed 12
-			Tag(LAN);
+			system("clear");
+			printf("BSSID              CH  PWR  #Beacons  #Data\n");
+			for (iter = AP_group.begin(); iter != AP_group.end(); iter++)
+			{
+				list<u_char> AP_BSSID = iter->first;
+				for(list<u_char>::iterator iter2 = AP_BSSID.begin(); iter2 != AP_BSSID.end(); iter2++)
+				{
+					if(iter2 == AP_BSSID.begin())
+					{
+						printf("%02X", *(iter2));
+						continue;
+					}
+					printf(":%02X", *(iter2));
+				}
+				(iter->second).print_info();
+			}
+			cout << endl;
 		}
-		cout << endl;
 	}
 	pcap_close(handle);
 	return 0;
