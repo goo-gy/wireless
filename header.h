@@ -121,8 +121,7 @@ public:
 		tag_length = *(LAN+1);
 		if(*LAN == 0)
 		{
-			for (u_char i = 0; i < tag_length; i++)
-			      ESSID.assign(1, *(LAN+2+i));
+			ESSID.assign((char*)(LAN+2), tag_length);
 		}
 		else if(*LAN == 48)
 		{
@@ -159,8 +158,8 @@ public:
 		printf("%2d  ", channel);
 		printf("%3d  ", SSI_signal);
 		printf("%7d  ", beacon_count);
-		printf("%5d\n", data_count);
-		cout << endl;
+		printf("%6d  ", data_count);
+		cout << ESSID << endl;
 	}
 };
 

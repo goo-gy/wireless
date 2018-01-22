@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
 			//AP_group[BSSID] = AP_info;
 
 			system("clear");
-			printf("BSSID              CH  PWR  #Beacons  #Data\n");
+			printf("BSSID              CH  PWR  #Beacons  #Data  ESSID\n");
 			for (iter = AP_group.begin(); iter != AP_group.end(); iter++)
 			{
 				list<u_char> AP_BSSID = iter->first;
