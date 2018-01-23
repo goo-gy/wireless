@@ -77,6 +77,10 @@ public:
 		u_char type = (IEEE11->FC_subtype & 0x0c) >> 2;
 		u_char subtype = (IEEE11->FC_subtype & 0xF0) >> 4;
 
+		u_char wep = (IEEE11->FC_subtype & 0x02) >> 1;
+		if(wep)
+			encrypt = WEP;
+
 		if( type == 0 )
 		{
 			switch(subtype)
