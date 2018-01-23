@@ -55,14 +55,15 @@ private:
 public:
         AP_H()
         {
-
+		channel = 0;
 		beacon_count = 0;
 		data_count = 0;
-		u_char encrpyt = OPN;
         }
 
 	void Set_info(const u_char *packet)
 	{
+		encrypt = OPN;
+
 		radio_h *radio;
 		radio = (radio_h*)packet;
 
