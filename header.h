@@ -10,7 +10,7 @@
 using namespace std;
 
 enum TYPE_SUBTYPE { PROVE_REQUEST, PROVE_RESPONSE, BEACON, AUTH, DEAUTH, ELSE };
-
+enum ENCRYPT  { OPN, WEP, WPA, WPA2 };
 
 typedef struct radio_header
 {
@@ -51,12 +51,14 @@ private:
         unsigned int beacon_count;
         unsigned int data_count;
 	u_char type_subtype;
+	u_char encrypt;
 public:
         AP_H()
         {
 
 		beacon_count = 0;
 		data_count = 0;
+		u_char encrpyt = OPN;
         }
 
 	void Set_info(const u_char *packet)
@@ -79,7 +81,7 @@ public:
 			{
 				case 8:
 					type_subtype = BEACON;
-					beacon_count ++;
+					//beacon_count ++;
 					break;
 				default:
 					type_subtype = ELSE;
@@ -94,7 +96,7 @@ public:
 		}
 		else if(type == 2)		// [Data Frame]
 		{
-			data_count++;
+			//data_count++;
 			type_subtype = ELSE;
 			return;
 		}
@@ -127,6 +129,7 @@ public:
 		{
 			cout << "";
 			//cout << "ENC\t\t\t:WPA2 (Not Certain)" << endl;
+			encrypt = WPA2;
 		}
 		else if(*LAN == 221)
 		{
@@ -155,10 +158,27 @@ public:
 	void print_info()
 	{
 		cout << "  ";
-		printf("%2d  ", channel);
 		printf("%3d  ", SSI_signal);
 		printf("%7d  ", beacon_count);
 		printf("%6d  ", data_count);
+		printf("%2d  ", channel);
+		switch(encrypt)
+		{
+			case 0:
+				printf("%-4s ", "OPN");
+				break;
+			case 1:
+				printf("%-4s ", "WEP");
+				break;
+			case 2:
+				printf("%-4s ", "WPA");
+				break;
+			case 3:
+				printf("%-4s ", "WPA2");
+				break;
+			default:
+				cout << "Error" << endl;
+		}
 		cout << ESSID << endl;
 	}
 };

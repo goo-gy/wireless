@@ -1,2 +1,2 @@
-all: wireless.cpp
+all: wireless.cpp header.h
 	g++ -o Wireless wireless.cpp -lpcap
