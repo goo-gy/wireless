@@ -68,6 +68,7 @@ public:
 		radio = (radio_h*)packet;
 
 		channel = (radio->channel_frequency-2407)/5;
+		//cout << radio->channel_frequency << " " << channel << endl;
 		SSI_signal = radio->SSI_signal;
 
 		IEEE11_h *IEEE11;
