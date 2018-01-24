@@ -10,7 +10,9 @@
 using namespace std;
 
 enum TYPE_SUBTYPE { PROVE_REQUEST, PROVE_RESPONSE, BEACON, AUTH, DEAUTH, ELSE };
-enum ENCRYPT  { OPN, WEP, WPA, WPA2 };
+enum ENCRYPT  { OPN, WEP, WPA = 2, WPA2 = 4 };
+enum CIPHER  { TKIP = 2, AES = 4 };
+enum AUTH  { PSK = 2 };
 
 typedef struct radio_header
 {
@@ -52,17 +54,24 @@ private:
         unsigned int data_count;
 	u_char type_subtype;
 	u_char encrypt;
+	u_char pair_cipher;
+	u_char auth;
 public:
         AP_H()
         {
 		channel = 0;
 		beacon_count = 0;
 		data_count = 0;
+		encrypt = OPN;
+		pair_cipher = 0;
+		auth = 0;
         }
 
 	void Set_info(const u_char *packet)
 	{
 		encrypt = OPN;
+		pair_cipher = 0;
+		auth = 0;
 
 		radio_h *radio;
 		radio = (radio_h*)packet;
@@ -110,13 +119,13 @@ public:
 		{
 			type_subtype = ELSE;
 			 return;
-		 }
+		}
                 if(type_subtype == BEACON)
                 {
 			BSSID.clear();
 			for(int i = 0; i < 6; i++)
 			{
-				BSSID.push_back((int)(*(IEEE11->ADDR3+i)));
+				BSSID.push_back(*(IEEE11->ADDR3+i));
 			}
                         u_char *LAN = (u_char*)(IEEE11)+24+12;  // IEEE Beacon 24, fixed 12
                         Tag(LAN);
@@ -127,23 +136,26 @@ public:
 	{
 		u_char tag_length;
 		tag_length = *(LAN+1);
-		if(*LAN == 0)
+
+		switch(*LAN)
 		{
-			ESSID.assign((char*)(LAN+2), tag_length);
-		}
-		else if(*LAN == 48)
-		{
-			cout << "";
-			//cout << "ENC\t\t\t:WPA2 (Not Certain)" << endl;
-			encrypt = WPA2;
-		}
-		else if(*LAN == 221)
-		{
-			return;
+			u_short cipher_count;
+			u_short auth_count;
+			case 0:
+				ESSID.assign((char*)(LAN+2), tag_length);
+				break;
+			case 48:
+				encrypt = *(LAN+4+3);
+				cipher_count = *((u_short*)(LAN+8));
+				pair_cipher = *(LAN + 10 + 3);
+				auth = *(LAN + 10 + 4*cipher_count + 2 + 3);
+				printf("%d\n", *(LAN+4+3));
+				break;
+			case 221:
+				return;
 		}
 		Tag(LAN+tag_length+2);
 	}
-	
 	u_char get_subtype()
 	{
 		return type_subtype;
@@ -179,13 +191,37 @@ public:
 			case 2:
 				printf("%-4s ", "WPA");
 				break;
-			case 3:
+			case 4:
 				printf("%-4s ", "WPA2");
 				break;
 			default:
-				cout << "Error" << endl;
+				printf("%-7s ", "ERROR");
 		}
+                switch(pair_cipher)
+                {
+			case 0:
+                                printf("%6s  ", "");
+				break;
+                        case 2:
+                                printf("%6s  ", "TKIP");
+                                break;
+                        case 4:
+                                printf("%6s  ", "CCMP");
+                                break;
+                        default:
+				printf("%6s  ", "ERROR");
+                }
+		switch(auth)
+		{
+			case 0:
+                                printf("%-5s ", "");
+                                break;
+                        case 2:
+                                printf("%-5s ", "PSK");
+                                break;
+                        default:
+                                printf("%-5s ", "ERROR");
+                }
 		cout << ESSID << endl;
 	}
 };
-
