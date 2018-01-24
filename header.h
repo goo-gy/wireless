@@ -12,7 +12,7 @@ using namespace std;
 enum TYPE_SUBTYPE { PROVE_REQUEST, PROVE_RESPONSE, BEACON, AUTH, DEAUTH, ELSE };
 enum ENCRYPT  { OPN, WEP, WPA = 2, WPA2 = 4 };
 enum CIPHER  { TKIP = 2, AES = 4 };
-enum AUTH  { PSK = 2 };
+enum AUTH  { MGT = 1, PSK = 2 };
 
 typedef struct radio_header
 {
@@ -216,6 +216,8 @@ public:
 			case 0:
                                 printf("%-5s ", "");
                                 break;
+			case 1:
+                                printf("%-5s ", "MGT");
                         case 2:
                                 printf("%-5s ", "PSK");
                                 break;
