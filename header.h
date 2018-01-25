@@ -209,6 +209,16 @@ public:
 	}
 	void print_info()
 	{
+
+		for(int i = 0; i < 6; i++)
+		{
+			if(i == 0)
+			{
+				printf(" %02X", BSSID.mac[i]);
+				continue;
+			}
+			printf(":%02X", BSSID.mac[i]);
+		}
 		cout << "  ";
 		printf("%3d  ", SSI_signal);
 		printf("%7d  ", beacon_count);

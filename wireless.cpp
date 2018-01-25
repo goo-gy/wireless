@@ -70,19 +70,9 @@ int main(int argc, char *argv[])
 			}
 
 			system("clear");
-			printf("BSSID              PWR  #Beacons  #Data  Frequency  CH  ENC  CIPHER  AUTH  ESSID\n\n");
+			printf("\n BSSID              PWR  #Beacons  #Data  Frequency  CH  ENC  CIPHER  AUTH  ESSID\n\n");
 			for (iter = AP_group.begin(); iter != AP_group.end(); iter++)
 			{
-				MAC AP_BSSID = iter->first;
-				for(int i = 0; i < 6; i++)
-				{
-					if(i == 0)
-					{
-						printf("%02X", AP_BSSID.mac[i]);
-						continue;
-					}
-					printf(":%02X", AP_BSSID.mac[i]);
-				}
 				(iter->second).print_info();
 			}
 			cout << endl;
