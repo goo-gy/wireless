@@ -37,11 +37,11 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 //------------------------------------------------------------------	packet capture
-	map<list<u_char>, AP_H> AP_group;
-	map<list<u_char>, AP_H>::iterator iter;
+	map<MAC, AP_H> AP_group;
+	map<MAC, AP_H>::iterator iter;
 	AP_H AP_info;
 
-	list<u_char> BSSID;
+	MAC BSSID;
 
 	while(true)
 	{
@@ -57,32 +57,31 @@ int main(int argc, char *argv[])
 		}
 
 		AP_info.Set_info(packet);
-		BSSID = AP_info.get_MAC();
+		memcpy(BSSID.mac, AP_info.get_BSSID(), sizeof(BSSID.mac));	// Modify
 
-		if(BEACON == AP_info.get_subtype())		//
+		if(BEACON == AP_info.get_subtype())
 		{
-			if(AP_group.end() == AP_group.find(BSSID))	//BSSID
-				AP_group.insert(pair<list<u_char>, AP_H>(BSSID, AP_info));
+			if(AP_group.end() == AP_group.find(BSSID))
+				AP_group.insert(pair<MAC, AP_H>(BSSID, AP_info));
 			else
 			{
 				AP_info.set_beacon(AP_group[BSSID].get_beacon()+1);
 				AP_group[BSSID] = AP_info;
 			}
-			//AP_group[BSSID] = AP_info;
 
 			system("clear");
-			printf("BSSID              PWR  #Beacons  #Data  CH  ENC  CIPHER  AUTH  ESSID\n\n");
+			printf("BSSID              PWR  #Beacons  #Data  Frequency  CH  ENC  CIPHER  AUTH  ESSID\n\n");
 			for (iter = AP_group.begin(); iter != AP_group.end(); iter++)
 			{
-				list<u_char> AP_BSSID = iter->first;
-				for(list<u_char>::iterator iter2 = AP_BSSID.begin(); iter2 != AP_BSSID.end(); iter2++)
+				MAC AP_BSSID = iter->first;
+				for(int i = 0; i < 6; i++)
 				{
-					if(iter2 == AP_BSSID.begin())
+					if(i == 0)
 					{
-						printf("%02X", *(iter2));
+						printf("%02X", AP_BSSID.mac[i]);
 						continue;
 					}
-					printf(":%02X", *(iter2));
+					printf(":%02X", AP_BSSID.mac[i]);
 				}
 				(iter->second).print_info();
 			}

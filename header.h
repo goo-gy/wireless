@@ -3,6 +3,7 @@
 #include <pcap.h>
 #include <arpa/inet.h>
 #include <string>
+#include <cstring>
 #include <list>
 #include <map>
 #include <stdlib.h>
@@ -44,14 +45,46 @@ typedef struct IEEE11_header
 	u_int HT_Control;
 }IEEE11_h;
 
+class MAC
+{
+public:
+	u_char mac[6];
+	
+	bool operator < (const MAC &ref) const
+	{
+		for (int i = 0; i < 6; i++)
+		{
+			if (mac[i] < ref.mac[i])
+				return true;
+			else if(mac[i] > ref.mac[i])
+				return false;
+		}
+		return false;
+	}
+/*
+	bool operator > (const MAC &ref) const
+	{
+		for (int i = 0; i < 6; i++)
+		{
+			if (mac[i] > ref.mac[i])
+				return true;
+			else if(mac[i] < ref.mac[i])
+				return false;
+		}
+		return false;
+	}
+*/
+};
+
 class AP_H {
 private:
-	list<u_char> BSSID;
+	MAC BSSID;
         string ESSID;
+	u_short frequency;
         u_char channel;
         char SSI_signal;
-        unsigned int beacon_count;
-        unsigned int data_count;
+        u_int beacon_count;
+        u_int data_count;
 	u_char type_subtype;
 	u_char encrypt;
 	u_char pair_cipher;
@@ -76,7 +109,8 @@ public:
 		radio_h *radio;
 		radio = (radio_h*)packet;
 
-		channel = (radio->channel_frequency-2407)/5;
+		frequency = radio->channel_frequency;
+		channel = (frequency-2407)/5;
 		//cout << radio->channel_frequency << " " << channel << endl;
 		SSI_signal = radio->SSI_signal;
 
@@ -122,10 +156,9 @@ public:
 		}
                 if(type_subtype == BEACON)
                 {
-			BSSID.clear();
 			for(int i = 0; i < 6; i++)
 			{
-				BSSID.push_back(*(IEEE11->ADDR3+i));
+				BSSID.mac[i] = *(IEEE11->ADDR3+i);
 			}
                         u_char *LAN = (u_char*)(IEEE11)+24+12;  // IEEE Beacon 24, fixed 12
                         Tag(LAN);
@@ -161,10 +194,11 @@ public:
 		return type_subtype;
 	}
 	
-	list<u_char> get_MAC()
+	u_char* get_BSSID()
 	{
-		return BSSID;
+		return BSSID.mac;
 	}
+
 	void set_beacon(unsigned int count)
 	{
 		beacon_count = count;
@@ -179,6 +213,7 @@ public:
 		printf("%3d  ", SSI_signal);
 		printf("%7d  ", beacon_count);
 		printf("%6d  ", data_count);
+		printf("%6d Hz  ", frequency);
 		printf("%2d  ", channel);
 		switch(encrypt)
 		{
@@ -218,6 +253,7 @@ public:
                                 break;
 			case 1:
                                 printf("%-5s ", "MGT");
+				break;
                         case 2:
                                 printf("%-5s ", "PSK");
                                 break;
