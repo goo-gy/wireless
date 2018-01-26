@@ -10,7 +10,7 @@
 
 using namespace std;
 
-enum TYPE_SUBTYPE { PROVE_REQUEST, PROVE_RESPONSE, BEACON, AUTH, DEAUTH, ELSE };
+enum TYPE_SUBTYPE { PROVE_REQUEST, PROVE_RESPONSE, BEACON, AUTH, DEAUTH, DATA, ELSE };
 enum ENCRYPT  { OPN, WEP, WPA = 2, WPA2 = 4 };
 enum CIPHER  { TKIP = 2, AES = 4 };
 enum AUTH  { MGT = 1, PSK = 2 };
@@ -83,13 +83,13 @@ private:
 	u_short frequency;
         u_char channel;
         char SSI_signal;
-        u_int beacon_count;
-        u_int data_count;
 	u_char type_subtype;
 	u_char encrypt;
 	u_char pair_cipher;
 	u_char auth;
 public:
+        u_int beacon_count;
+        u_int data_count;
         AP_H()
         {
 		channel = 0;
@@ -146,7 +146,7 @@ public:
 		else if(type == 2)		// [Data Frame]
 		{
 			//data_count++;
-			type_subtype = ELSE;
+			type_subtype = DATA;
 			return;
 		}
 		else
@@ -158,7 +158,7 @@ public:
                 {
 			for(int i = 0; i < 6; i++)
 			{
-				BSSID.mac[i] = *(IEEE11->ADDR3+i);
+				BSSID.mac[i] = *(IEEE11->ADDR2+i);
 			}
                         u_char *LAN = (u_char*)(IEEE11)+24+12;  // IEEE Beacon 24, fixed 12
                         Tag(LAN);
@@ -199,14 +199,6 @@ public:
 		return BSSID.mac;
 	}
 
-	void set_beacon(unsigned int count)
-	{
-		beacon_count = count;
-	}
-	unsigned int get_beacon()
-	{
-		return beacon_count;
-	}
 	void print_info()
 	{
 

@@ -38,7 +38,6 @@ int main(int argc, char *argv[])
 	}
 //------------------------------------------------------------------	packet capture
 	map<MAC, AP_H> AP_group;
-	map<MAC, AP_H>::iterator iter;
 	AP_H AP_info;
 
 	MAC BSSID;
@@ -59,23 +58,45 @@ int main(int argc, char *argv[])
 		AP_info.Set_info(packet);
 		memcpy(BSSID.mac, AP_info.get_BSSID(), sizeof(BSSID.mac));	// Modify
 
+		map<MAC, AP_H>::iterator check = AP_group.find(BSSID);
+		map<MAC, AP_H>::iterator iter;
+
 		if(BEACON == AP_info.get_subtype())
 		{
-			if(AP_group.end() == AP_group.find(BSSID))
+			if(AP_group.end() == check)
 				AP_group.insert(pair<MAC, AP_H>(BSSID, AP_info));
 			else
 			{
-				AP_info.set_beacon(AP_group[BSSID].get_beacon()+1);
+				AP_info.beacon_count = check->second.beacon_count + 1;
+				AP_info.data_count = check->second.data_count;
 				AP_group[BSSID] = AP_info;
 			}
 
 			system("clear");
 			printf("\n BSSID              PWR  #Beacons  #Data  Frequency  CH  ENC  CIPHER  AUTH  ESSID\n\n");
+
 			for (iter = AP_group.begin(); iter != AP_group.end(); iter++)
 			{
 				(iter->second).print_info();
 			}
 			cout << endl;
+		}
+		else if(DATA == AP_info.get_subtype())
+		{
+			if(AP_group.end() == check)
+                                AP_group.insert(pair<MAC, AP_H>(BSSID, AP_info));
+                        else
+                        {
+				check->second.data_count += 1;
+                        }
+
+                        system("clear");
+                        printf("\n BSSID              PWR  #Beacons  #Data  Frequency  CH  ENC  CIPHER  AUTH  ESSID\n\n");
+                        for (iter = AP_group.begin(); iter != AP_group.end(); iter++)
+                        {
+                                (iter->second).print_info();
+                        }
+                        cout << endl;
 		}
 	}
 	pcap_close(handle);
