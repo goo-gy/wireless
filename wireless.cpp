@@ -67,9 +67,10 @@ int main(int argc, char *argv[])
 				AP_group.insert(pair<MAC, AP_H>(BSSID, AP_info));
 			else
 			{
-				AP_info.beacon_count = check->second.beacon_count + 1;
-				AP_info.data_count = check->second.data_count;
-				AP_group[BSSID] = AP_info;
+				//AP_info.beacon_count = check->second.beacon_count + 1;
+				//AP_info.data_count = check->second.data_count;
+				//AP_group[BSSID] = AP_info;
+				check->second.beacon_count += 1;
 			}
 
 			system("clear");

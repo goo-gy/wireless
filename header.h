@@ -145,8 +145,10 @@ public:
 		}
 		else if(type == 2)		// [Data Frame]
 		{
-			//data_count++;
-			type_subtype = DATA;
+			if(subtype == 0)
+				type_subtype = DATA;
+			else
+				type_subtype = ELSE;
 			return;
 		}
 		else
@@ -158,7 +160,7 @@ public:
                 {
 			for(int i = 0; i < 6; i++)
 			{
-				BSSID.mac[i] = *(IEEE11->ADDR2+i);
+				BSSID.mac[i] = *(IEEE11->ADDR3+i);
 			}
                         u_char *LAN = (u_char*)(IEEE11)+24+12;  // IEEE Beacon 24, fixed 12
                         Tag(LAN);
